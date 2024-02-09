@@ -1,10 +1,9 @@
 #include "./defines.h"
-
+#include "./timers.h"
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
 
-#include "./timers.h"
 
 volatile uint16_t counter = 0;
 
@@ -13,6 +12,7 @@ volatile uint16_t previousState = 0;
 volatile uint8_t event = 0;
 
 volatile uint8_t timer0OverflowCounter = 0;
+
 
 void InterruptInnit(){
 	EICRA |= (1 << ISC01) | (1 << ISC00);
@@ -69,6 +69,7 @@ void PinInnit(){
 	
 }
 
+
 void setEvent(uint8_t e){
 	event |= e;
 }
@@ -85,7 +86,6 @@ int isEventSet(uint8_t e){
 		return 0;
 	}
 }
-
 
 
 ISR(INT0_vect){
@@ -105,6 +105,7 @@ ISR(TIMER0_OVF_vect){
 		timer0OverflowCounter = 0;
 	}
 }
+
 
 int flanken(uint16_t currentState){
 	if(currentState){
@@ -147,6 +148,45 @@ void led_counter(uint16_t counter){
 	}
 }
 
+void counterWithButtons(){
+	if(isEventSet(e1)){
+		PORTD |= (1<<PORTD3);
+	}
+	else{
+		PORTD &= ~(1<<PORTD3);
+	}
+	
+	if (flanken(PIND & (1 << PIND6)) == 1) {
+		deleteEvent(e1);
+	}
+	
+	if(!isEventSet(e1)){
+		
+		PORTB |= (1<<PORTB2);
+		
+		if(counter <= 7){
+			led_counter(counter);
+			counter++;
+		}
+		else{
+			led_counter(counter);
+			counter = 0;
+		}
+	}
+	else{
+		PORTB &= ~(1<<PORTB1);
+		PORTB &= ~(1<<PORTB0);
+		PORTD &= ~(1<<PORTD7);
+		PORTB &= ~(1<<PORTB2);
+		PORTD |= (1<<PORTD2);
+		
+		counter = 0;
+	}
+	startTimer(1);
+	_delay_ms(300);
+}
+
+
 int main(void)
 {
 	//initialize Pins
@@ -159,43 +199,19 @@ int main(void)
 	//initialize Timers
 	TimerInnit();
 	
+	//initialize Custom Timers
+	initCoustomTimers();
+	
+	//set Custom Timers
+	declareTimer(timer_1, 1000, counterWithButtons);
 	
 	while (1)
 	{
-		/*
-		if(isEventSet(e1)){
-			PORTD |= (1<<PORTD3);
+		if(/*Button 1 pressed*/1){
+			startTimer(1);
 		}
-		else{
-			PORTD &= ~(1<<PORTD3);
+		if(/*Button 2 pressed*/1){
+			deleteTimer(1);
 		}
-		
-		if (flanken(PIND & (1 << PIND6)) == 1) {
-			deleteEvent(e1);
-		}
-		
-		if(!isEventSet(e1)){
-			
-			PORTB |= (1<<PORTB2);
-			
-			if(counter <= 7){
-				led_counter(counter);
-				counter++;
-			}
-			else{
-				led_counter(counter);
-				counter = 0;
-			}
-		}
-		else{
-			PORTB &= ~(1<<PORTB1);
-			PORTB &= ~(1<<PORTB0);
-			PORTD &= ~(1<<PORTD7);
-			PORTB &= ~(1<<PORTB2);
-			PORTD |= (1<<PORTD2);
-			
-			counter = 0;
-		}
-		_delay_ms(300);*/
 	}
 }

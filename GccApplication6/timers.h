@@ -1,12 +1,17 @@
 #ifndef INCFILE1_H_
 #define INCFILE1_H_
 
-struct 
+#include <stdint.h>
+#include "defines.h"
 
-void declareTimer();
+typedef void (*callBackFuncT)();
 
-void startTimer();
+void initCoustomTimers();
 
-void deleteTimer();
+void declareTimer(uint8_t i, uint8_t duration, callBackFuncT callback);
+
+void startTimer(uint8_t i);
+
+void deleteTimer(uint8_t i);
 
 #endif /* INCFILE1_H_ */
